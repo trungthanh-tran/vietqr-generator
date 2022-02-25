@@ -4,12 +4,12 @@ namespace tttran\viet_qr_generator;
 use tttran\viet_qr_generator\Helper;
 use tttran\viet_qr_generator\InvalidBankIdException;
 
-class VietQRGenerator {
+class Generator {
     public static function generate($bankId, $accountNo) {
         $stringToGenerate = '';
         try {
             $crc = '';
-            $stringToGenerate = VietQRGenerator::generate_common($bankId, $accountNo);
+            $stringToGenerate = Generator::generate_common($bankId, $accountNo);
             $crc = CRCHelper::crcChecksum($stringToGenerate);
             $stringToGenerate = $stringToGenerate.$crc;
         } catch (InvalidBankIdException $e) {
@@ -23,7 +23,7 @@ class VietQRGenerator {
         $stringToGenerate = '';
         try {
             $crc = '';
-            $stringToGenerate = VietQRGenerator::generate_common($bankId, $accountNo);
+            $stringToGenerate = Generator::generate_common($bankId, $accountNo);
             
             $crc = CRCHelper::crcChecksum($stringToGenerate);
             $stringToGenerate = $stringToGenerate.$crc;
