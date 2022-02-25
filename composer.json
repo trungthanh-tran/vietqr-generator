@@ -1,5 +1,5 @@
 {
-    "name": "tttran/viet-qr-generator",
+    "name": "tttran/viet_qr_generator",
     "description": "VietQR generator by following vietqr specification",
     "type": "library",
     "license": "MIT",
@@ -11,7 +11,7 @@
     ],
     "minimum-stability": "stable",
     "autoload": {
-        "psr-4": {"tttran\\viet-qr-generator\\": "src/"}
+        "psr-4": {"tttran\\viet_qr_generator\\": "src/"}
     },
     "require": {}
 }

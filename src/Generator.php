@@ -1,8 +1,8 @@
 <?php
-namespace tttran\VietQrGenerator;
+namespace tttran\viet_qr_generator;
 
-use Helper;
-use tttran\VietQrGenerator\exception\InvalidBankIdException;
+use tttran\viet_qr_generator\Helper;
+use tttran\viet_qr_generator\InvalidBankIdException;
 
 class VietQRGenerator {
     public static function generate($bankId, $accountNo) {
@@ -48,5 +48,3 @@ class VietQRGenerator {
         return $stringToGenerate;
     }
 }
-
-echo VietQRGenerator::generate("vcb", "11111");

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace tttran\VietQrGenerator;
+namespace tttran\viet_qr_generator;
 
 
 class CRCHelper
