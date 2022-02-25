@@ -1,8 +1,8 @@
 <?php
-namespace tttran\VietQRGenerator;
+namespace tttran\VietQrGenerator;
 
 use Helper;
-use tttran\vietqrGenerator\exception\InvalidBankIdException;
+use tttran\VietQrGenerator\exception\InvalidBankIdException;
 
 class VietQRGenerator {
     public static function generate($bankId, $accountNo) {

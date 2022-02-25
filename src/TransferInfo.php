@@ -1,7 +1,7 @@
 <?php
 
 
-namespace tttran\vietqrGenerator;
+namespace tttran\VietQrGenerator;
 
 
 class TransferInfo

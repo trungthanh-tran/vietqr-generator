@@ -1,7 +1,7 @@
 <?php
 
-use tttran\vietqrGenerator\exception\InvalidBankIdException;
-use tttran\vietqrGenerator\VietQRField;
+use tttran\VietQrGenerator\exception\InvalidBankIdException;
+use tttran\VietQrGenerator\VietQRField;
 
 class Helper {
     public static function addField($currentString, $code, $value) {
