@@ -1,0 +1,17 @@
+{
+    "name": "tttran/VietQRGenerator",
+    "description": "VietQR generator by following vietqr specification",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "TRAN Trung Thanh",
+            "email": "trungthanh.tran@live.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "autoload": {
+        "psr-4": {"tttran\\VietQRGenerator\\": "src/"}
+    },
+    "require": {}
+}
