@@ -11,7 +11,7 @@ class Generator {
             $crc = '';
             $stringToGenerate = Generator::generate_common($bankId, $accountNo);
             $crc = CRCHelper::crcChecksum($stringToGenerate);
-            $stringToGenerate = $stringToGenerate.$crc;
+            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CRC, $crc);
         } catch (InvalidBankIdException $e) {
             echo "Cannot check VietQR";
         }
