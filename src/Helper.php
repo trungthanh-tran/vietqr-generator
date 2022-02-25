@@ -11,7 +11,7 @@ class Helper {
         if (empty($newValue)) {
             $newValue = '';
         }
-        $newValue = $newValue . $code . strlen($value) . $value;
+        $newValue = $newValue . $code . sprintf("%02d", strlen($value)) . $value;
         return $newValue;
     }
 
