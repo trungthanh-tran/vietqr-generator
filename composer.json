@@ -21,7 +21,8 @@
     },
     "require": {
         "ext-json": "*",
-        "php": ">=7.0"
+        "php": ">=7.0",
+        "endroid/qr-code": "4.4.7"
     },
     "require-dev": {
         "phpunit/phpunit": "*"

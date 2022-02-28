@@ -1,13 +1,38 @@
 <?php
+
 namespace tttran\viet_qr_generator;
 
-class Generator {
-    private $bankId;
-    private $accountNo;
-    private $amount;
-    private $info;
+use Endroid\QrCode\Builder\Builder;
+use Endroid\QrCode\Encoding\Encoding;
+use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
+use Endroid\QrCode\Label\Alignment\LabelAlignmentCenter;
+use Endroid\QrCode\Label\Font\NotoSans;
+use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
+use Endroid\QrCode\Writer\PngWriter;
 
-    public static function create(): Generator {
+class Generator
+{
+    // Bank ID
+    private $bankId;
+    //  Account No
+    private $accountNo;
+    // Amount to transfer
+    private $amount;
+    // Ref
+    private $info;
+    // Return text or image in base64
+    private $returnText = true;
+    // Size of QR. Default 200px
+    private $size = 200;
+    // Size of margin. Default 10 px.
+    private $margin = 10;
+    // Logo path
+    private $logoPath;
+    // Data path
+    private $data;
+
+    public static function create(): Generator
+    {
         return new self();
     }
 
@@ -16,29 +41,47 @@ class Generator {
         return $this;
     }
 
-    public function bankId($bankId) {
+    public function bankId($bankId): Generator
+    {
         $this->bankId = $bankId;
         return $this;
     }
 
-    public function accountNo($accountNo) {
+    public function accountNo($accountNo): Generator
+    {
         $this->accountNo = $accountNo;
         return $this;
     }
 
-    public function amount($amount) {
+    public function amount($amount): Generator
+    {
         $this->amount = $amount;
         return $this;
     }
 
-    public function info($info) {
+    public function info($info): Generator
+    {
         $this->info = $info;
         return $this;
     }
 
-    public function generate() {
-        if (empty($this->bankId) || empty($this->accountNo))
-        {
+    public function returnText($returnText): Generator
+    {
+        $this->returnText = $returnText;
+        return $this;
+    }
+
+    public function size($size): Generator
+    {
+        $this->size = $size;
+        return $this;
+    }
+
+
+
+    public function generate()
+    {
+        if (empty($this->bankId) || empty($this->accountNo)) {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid parameter", ""));
         }
 
@@ -69,11 +112,33 @@ class Generator {
                 $ref = Helper::addField("", VietQRField::ADDITION_REF, $this->info);
                 $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::ADDITION, $ref);
             }
-            $crc = CRCHelper::crcChecksum($stringToGenerate.VietQRField::CRC."04");
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CRC, $crc);
+            $crc = CRCHelper::crcChecksum($stringToGenerate . VietQRField::CRC . "04");
+            $this->data = Helper::addField($stringToGenerate, VietQRField::CRC, $crc);
         } catch (InvalidBankIdException $e) {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid bankId", ""));
         }
-        return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $stringToGenerate));
+        if ($this->returnText) {
+            return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $this->data));
+        } else {
+            return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $this->generate_image()));
+        }
+
+    }
+
+    public function generate_image() {
+        $result = Builder::create()
+            ->writer(new PngWriter())
+            ->writerOptions([])
+            ->data('Custom QR code contents')
+            ->encoding(new Encoding('UTF-8'))
+            ->errorCorrectionLevel(new ErrorCorrectionLevelHigh())
+            ->size($this->size)
+            ->margin($this->margin)
+            ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
+            ->logoPath($this->logoPath)
+            ->labelFont(new NotoSans(20))
+            ->labelAlignment(new LabelAlignmentCenter())
+            ->build();
+        return $result->getDataUri();
     }
 }
