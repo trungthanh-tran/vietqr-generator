@@ -1,5 +1,15 @@
 Extension to generate Text according to VietQR Specification via account.
 
+Import lib
+```json
+{
+  "require":{
+    "tttran/viet_qr_generator": "v0.1"
+  }
+}
+
+```
+
 Generate with amount
 ```php
 use tttran\viet_qr_generator\Generator;
