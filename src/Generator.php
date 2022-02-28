@@ -38,8 +38,22 @@ class Generator {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid parameter", ""));
         }
         try {
-            $stringToGenerate = Generator::generate_common($this->bankId, $this->accountNo);
+            $stringToGenerate = "";
+            $paymentType = "11";
+            $consumerInfo = Helper::generateMerchantInfo($this->bankId, $this->accountNo);
+            // Add header
+            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::VERSION, "01");
+            if (!empty($this->info)) {
+                $paymentType = "12";
+            }
+            // Payment type. 11 if permantly. 12 otherwise
+            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::INITIATION_METHOD, $paymentType);
+            // Add consumer info
+            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CONSUMER_INFO, $consumerInfo);
+            // Add currency
+            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CURRENCY_CODE, "704");
             if (!empty($this->amount)) {
+                // Add amount
                 $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::TRANSACTION_AMOUNT, $this->amount);
             }
             $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::COUNTRY_CODE, "VN");
@@ -53,20 +67,5 @@ class Generator {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid bankId", ""));
         }
         return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $stringToGenerate));
-    }
-
-    public static function  generate_common($bankId, $accountNo) {
-        $stringToGenerate = '';
-        try {
-            $consumerInfo = Helper::generateMerchantInfo($bankId, $accountNo);
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::VERSION, "01");
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::INITIATION_METHOD, "11");
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CONSUMER_INFO, $consumerInfo);
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CURRENCY_CODE, "704");
-
-        } catch (InvalidBankIdException $e) {
-            throw $e;
-        }
-        return $stringToGenerate;
     }
 }
