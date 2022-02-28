@@ -37,31 +37,20 @@ class Generator {
         {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid parameter", ""));
         }
-        $stringToGenerate = '';
         try {
-            $crc = '';
             $stringToGenerate = Generator::generate_common($this->bankId, $this->accountNo);
+            if (!empty($this->amount)) {
+                $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::TRANSACTION_AMOUNT, $this->amount);
+            }
+            if (!empty($this->info)) {
+                $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::ADDITION, $this->info);
+            }
             $crc = CRCHelper::crcChecksum($stringToGenerate.VietQRField::CRC."04");
             $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CRC, $crc);
         } catch (InvalidBankIdException $e) {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid bankId", ""));
         }
         return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $stringToGenerate));
-    }
-
-    public static function generate_withInfo($bankId, $accountNo, $transferInfo)
-    {
-        $stringToGenerate = '';
-        try {
-            $crc = '';
-            $stringToGenerate = Generator::generate_common($bankId, $accountNo);
-            
-            $crc = CRCHelper::crcChecksum($stringToGenerate);
-            $stringToGenerate = $stringToGenerate.$crc;
-        } catch (InvalidBankIdException $e) {
-            echo "Cannot check VietQR";
-        }
-        return $stringToGenerate;
     }
 
     public static function  generate_common($bankId, $accountNo) {
