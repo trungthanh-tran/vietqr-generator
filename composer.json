@@ -13,5 +13,7 @@
     "autoload": {
         "psr-4": {"tttran\\viet_qr_generator\\": "src/"}
     },
-    "require": {}
+    "require": {
+        "ext-json": "*"
+    }
 }
