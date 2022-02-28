@@ -13,7 +13,17 @@
     "autoload": {
         "psr-4": {"tttran\\viet_qr_generator\\": "src/"}
     },
+
+    "autoload-dev": {
+        "psr-4": {
+            "tttran\\viet_qr_generator\\tests\\": "tests/"
+        }
+    },
     "require": {
-        "ext-json": "*"
+        "ext-json": "*",
+        "php": "^7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
     }
 }

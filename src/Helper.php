@@ -73,4 +73,10 @@ class Helper {
                 throw new InvalidBankIdException();
         }
     }
+
+    public static function isValidAmount($amount): bool {
+        $regExpPattern = '/^\d{1,}\.?\d{0,2}$/';
+        $currencyToTest = trim ($amount);
+        return preg_match ($regExpPattern, $currencyToTest);
+    }
 }

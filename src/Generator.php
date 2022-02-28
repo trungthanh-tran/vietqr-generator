@@ -7,6 +7,10 @@ class Generator {
     private $amount;
     private $info;
 
+    public static function create(): Generator {
+        return new self();
+    }
+
     public function __construct()
     {
         return $this;
@@ -37,6 +41,7 @@ class Generator {
         {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid parameter", ""));
         }
+
         try {
             $stringToGenerate = "";
             $paymentType = "11";
@@ -53,6 +58,9 @@ class Generator {
             // Add currency
             $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CURRENCY_CODE, "704");
             if (!empty($this->amount)) {
+                if (!Helper::isValidAmount($this->amount)) {
+                    json_encode(new Response(Response::INVALID_PARAMETERS, "Invalid amount", ""));
+                }
                 // Add amount
                 $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::TRANSACTION_AMOUNT, $this->amount);
             }
