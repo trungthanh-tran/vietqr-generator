@@ -42,8 +42,10 @@ class Generator {
             if (!empty($this->amount)) {
                 $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::TRANSACTION_AMOUNT, $this->amount);
             }
+            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::COUNTRY_CODE, "VN");
             if (!empty($this->info)) {
-                $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::ADDITION, $this->info);
+                $ref = Helper::addField("", VietQRField::ADDITION_REF, $this->info);
+                $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::ADDITION, $ref);
             }
             $crc = CRCHelper::crcChecksum($stringToGenerate.VietQRField::CRC."04");
             $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CRC, $crc);
@@ -61,7 +63,7 @@ class Generator {
             $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::INITIATION_METHOD, "11");
             $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CONSUMER_INFO, $consumerInfo);
             $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CURRENCY_CODE, "704");
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::COUNTRY_CODE, "VN");
+
         } catch (InvalidBankIdException $e) {
             throw $e;
         }

@@ -20,4 +20,6 @@ abstract class VietQRField
     const CONSUMER_INFO_CONSUMER_BIN = "00";
     const CONSUMER_INFO_CONSUMER_MERCHANT = "01";
     const CONSUMER_INFO_SERVICE_CODE = "02";
+    
+    const ADDITION_REF = "08";
 }
