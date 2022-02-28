@@ -4,7 +4,7 @@
 namespace tttran\viet_qr_generator;
 
 
-class Response
+class Response implements \JsonSerializable
 {
     private $code;
     private $desc;
@@ -21,7 +21,11 @@ class Response
         return $this;
     }
 
-    function toString() {
-        return json_encode($this);
+    /**
+     * @inheritDoc
+     */
+    public function jsonSerialize()
+    {
+        return get_object_vars($this);
     }
 }

@@ -35,7 +35,7 @@ class Generator {
     public function generate() {
         if (empty($this->bankId) || empty($this->accountNo))
         {
-            return (new Response(Response::INVALID_PARAMETERS, "Missing or invalid parameter", ""))->toString();
+            return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid parameter", ""));
         }
         $stringToGenerate = '';
         try {
@@ -44,9 +44,9 @@ class Generator {
             $crc = CRCHelper::crcChecksum($stringToGenerate.VietQRField::CRC."04");
             $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CRC, $crc);
         } catch (InvalidBankIdException $e) {
-            return (new Response(Response::INVALID_PARAMETERS, "Missing or invalid bankId", ""))->toString();
+            return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid bankId", ""));
         }
-        return (new Response(Response::SUCCESSFUL_CODE, "ok", $stringToGenerate))->toString();
+        return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $stringToGenerate));
     }
 
     public static function generate_withInfo($bankId, $accountNo, $transferInfo)
