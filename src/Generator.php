@@ -77,7 +77,17 @@ class Generator
         return $this;
     }
 
+    public function margin($margin): Generator
+    {
+        $this->margin = $margin;
+        return $this;
+    }
 
+    public function logoPath($logoPath): Generator
+    {
+        $this->logoPath = $logoPath;
+        return $this;
+    }
 
     public function generate()
     {
@@ -129,16 +139,18 @@ class Generator
         $result = Builder::create()
             ->writer(new PngWriter())
             ->writerOptions([])
-            ->data('Custom QR code contents')
+            ->data($this->data)
             ->encoding(new Encoding('UTF-8'))
             ->errorCorrectionLevel(new ErrorCorrectionLevelHigh())
             ->size($this->size)
             ->margin($this->margin)
             ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
-            ->logoPath($this->logoPath)
-            ->labelFont(new NotoSans(20))
-            ->labelAlignment(new LabelAlignmentCenter())
-            ->build();
+            ->labelFont(new NotoSans(5))
+            ->labelAlignment(new LabelAlignmentCenter());
+        if (!empty($this->logoPath)) {
+            $result = $result->logoPath($this->logoPath);
+        }
+        $result = $result->build();
         return $result->getDataUri();
     }
 }
