@@ -5,6 +5,7 @@ namespace tttran\viet_qr_generator;
 class Helper
 {
     private static $banks;
+    private static $json_banks;
     public static function addField(string $currentString, int $code, string $value): string
     {
         $newValue = $currentString;
@@ -81,7 +82,10 @@ class Helper
     }
 
     public static function loadDataBanks() {
-        $banks = file_get_contents(__DIR__ . '/conf/banks.json');
-        return json_decode($banks,true);
+        if (!isset(self::$json_banks)) {
+            $banks = file_get_contents(__DIR__ . '/conf/banks.json');
+            self::$json_banks =  json_decode($banks,true);
+        }
+        return self::$json_banks;
     }
 }

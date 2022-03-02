@@ -6,7 +6,7 @@ Extension to generate Text according to VietQR Specification via account.
 ```json
 {
   "require":{
-    "tttran/viet_qr_generator": "v0.2"
+    "tttran/viet_qr_generator": "v0.3"
   }
 }
 
@@ -67,3 +67,4 @@ Functions
 |  size | integer | size of QR in pixel |
 | margin | integer | margin of QR |
 | logoPath | String | Path to logo in the center of image |
+| isCard | bool | True when bank transfer via card no. False via account no. Default: false |

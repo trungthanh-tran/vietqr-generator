@@ -162,4 +162,13 @@ class Generator
         $result = $result->build();
         return $result->getDataUri();
     }
+
+    /**
+     * Get bank list
+     * @return string
+     */
+    public static function getBanksList(): string {
+        $data = Helper::loadDataBanks();
+        return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", Helper::loadDataBanks()));
+    }
 }
