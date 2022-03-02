@@ -30,6 +30,8 @@ class Generator
     private $logoPath;
     // Data path
     private $data;
+    // Bank tranfer by card id
+    private $isCard = false;
 
     public static function create(): Generator
     {
@@ -89,7 +91,13 @@ class Generator
         return $this;
     }
 
-    public function generate()
+    public function isCard(bool $isCard): Generator
+    {
+        $this->isCard = $isCard;
+        return $this;
+    }
+
+    public function generate(): string
     {
         if (empty($this->bankId) || empty($this->accountNo)) {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid parameter", ""));
@@ -98,7 +106,7 @@ class Generator
         try {
             $stringToGenerate = "";
             $paymentType = "11";
-            $consumerInfo = Helper::generateMerchantInfo($this->bankId, $this->accountNo);
+            $consumerInfo = Helper::generateMerchantInfo($this->bankId, $this->accountNo, $this->isCard);
             // Add header
             $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::VERSION, "01");
             if (!empty($this->info)) {
@@ -132,10 +140,10 @@ class Generator
         } else {
             return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $this->generate_image()));
         }
-
     }
 
-    public function generate_image() {
+    public function generate_image(): string
+    {
         $result = Builder::create()
             ->writer(new PngWriter())
             ->writerOptions([])

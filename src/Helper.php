@@ -2,11 +2,11 @@
 
 namespace tttran\viet_qr_generator;
 
-use tttran\viet_qr_generator\InvalidBankIdException;
-use tttran\viet_qr_generator\VietQRField;
-
-class Helper {
-    public static function addField($currentString, $code, $value) {
+class Helper
+{
+    private static $banks;
+    public static function addField(string $currentString, int $code, string $value): string
+    {
         $newValue = $currentString;
         if (empty($newValue)) {
             $newValue = '';
@@ -15,9 +15,11 @@ class Helper {
         return $newValue;
     }
 
-    public static function generateMerchantInfo($bankId, $accountNo) {
+    public static function generateMerchantInfo(string $bankId, string $accountNo, bool $isAccount): string
+    {
         $merchantInfo = '';
         $receiverInfo = '';
+        $serviceCode = Helper::getNapasServiceCode($isAccount);
         $binCode = '';
         try {
             $binCode = Helper::getBIN($bankId);
@@ -29,54 +31,57 @@ class Helper {
 
         $merchantInfo = Helper::addField($merchantInfo, VietQRField::CONSUMER_INFO_GUID, "A000000727");
         $merchantInfo = Helper::addField($merchantInfo, VietQRField::CONSUMER_INFO_CONSUMER, $receiverInfo);
-        $merchantInfo = Helper::addField($merchantInfo, VietQRField::CONSUMER_INFO_SERVICE_CODE, "QRIBFTTA");
+        $merchantInfo = Helper::addField($merchantInfo, VietQRField::CONSUMER_INFO_SERVICE_CODE, $serviceCode);
 
         return $merchantInfo;
     }
 
-    private static function getBIN($bankId) {
+    /**
+     * Get bin code
+     * @param string $bankId/bin/shortname
+     * @return string
+     * @throws InvalidBankIdException
+     */
+    private static function getBIN(string $bankId): string
+    {
         if (empty($bankId)) {
             throw new InvalidBankIdException();
         }
         $bankId = strtolower($bankId);
-        switch($bankId) {
-            case "vietinbank":
-            case "icb":
-            case "970415":
-                return "970415";
-            case "vcb":
-            case "vietcombank":
-            case "970436":
-                return "970436";
-            case "mb":
-            case "mbbank":
-            case "970422":
-                return "970422";
-            case "acb":
-            case "970416":
-                return "970416";
-            case "vpb":
-            case "vpbank":
-            case "970432":
-                return "970432";
-            case "msb":
-            case "970426":
-                return "970426";
-            case "bidv":
-            case "970418":
-                return "970418";
-            case "stb":
-            case "sacombank":
-            case "970403":
-                return "970403";
-            default:
-                throw new InvalidBankIdException();
+        if (empty(self::$banks)) {
+            $bankData = self::loadDataBanks();
+            self::$banks = array();
+            foreach ($bankData->data as $item) {
+                self::$banks[$item->code] = $item->bin;
+                self::$banks[$item->bin] = $item->bin;
+                self::$banks[$item->short_name] = $item->bin;
+            }
+        }
+        if (isset(self::$banks[$bankId])) {
+            return self::$banks[$bankId];
+        } else {
+            throw new InvalidBankIdException();
         }
     }
 
-    public static function isValidAmount($amount): bool {
+    public static function isValidAmount(int $amount): bool
+    {
         $regExpPattern = '/^\d{1,}\.?\d{0,2}$/';
-        $currencyToTest = trim ($amount);
-        return preg_match ($regExpPattern, $currencyToTest);
+        $currencyToTest = trim($amount);
+        return preg_match($regExpPattern, $currencyToTest);
+    }
+
+    public static function getNapasServiceCode(bool $isCard): string
+    {
+        if ($isCard) {
+            return Constants::NAPAS_247_BY_CARD;
+        } else {
+            return Constants::NAPAS_247_BY_ACCOUNT;
+        }
+    }
+
+    public static function loadDataBanks() {
+        $banks = file_get_contents('data/banks.json');
+        return json_decode($banks,true);
     }
 }
