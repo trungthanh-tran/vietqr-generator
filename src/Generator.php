@@ -153,7 +153,8 @@ class Generator
             ->size($this->size)
             ->margin($this->margin)
             ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
-            ->labelFont(new NotoSans(5))
+            ->labelText($this->accountNo)
+            ->labelFont(new NotoSans(2))
             ->labelAlignment(new LabelAlignmentCenter());
         if (!empty($this->logoPath)) {
             $result = $result->logoPath($this->logoPath);
