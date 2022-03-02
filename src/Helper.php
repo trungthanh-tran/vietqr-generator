@@ -81,7 +81,7 @@ class Helper
     }
 
     public static function loadDataBanks() {
-        $banks = file_get_contents('data/banks.json');
+        $banks = file_get_contents('conf/banks.json');
         return json_decode($banks,true);
     }
 }
