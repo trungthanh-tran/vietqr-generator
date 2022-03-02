@@ -51,10 +51,10 @@ class Helper
         if (empty(self::$banks)) {
             $bankData = self::loadDataBanks();
             self::$banks = array();
-            foreach ($bankData->data as $item) {
-                self::$banks[$item->code] = $item->bin;
-                self::$banks[$item->bin] = $item->bin;
-                self::$banks[$item->short_name] = $item->bin;
+            foreach ($bankData["data"] as $item) {
+                self::$banks[strtolower($item["code"])] = strtolower($item["bin"]);
+                self::$banks[strtolower($item["bin"])] = strtolower($item["bin"]);
+                self::$banks[strtolower($item["short_name"])] = strtolower($item["bin"]);
             }
         }
         if (isset(self::$banks[$bankId])) {
@@ -81,7 +81,7 @@ class Helper
     }
 
     public static function loadDataBanks() {
-        $banks = file_get_contents('conf/banks.json');
+        $banks = file_get_contents(__DIR__ . '/conf/banks.json');
         return json_decode($banks,true);
     }
 }
