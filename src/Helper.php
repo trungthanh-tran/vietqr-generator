@@ -6,7 +6,7 @@ class Helper
 {
     private static $banks;
     private static $json_banks;
-    public static function addField(string $currentString, int $code, string $value): string
+    public static function addField(string $currentString, string $code, string $value): string
     {
         $newValue = $currentString;
         if (empty($newValue)) {
