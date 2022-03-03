@@ -28,6 +28,10 @@ class Generator
     private $margin = 10;
     // Logo path
     private $logoPath;
+    // Logo width in px
+    private $logoWidth = 50;
+    // Logo height in px
+    private $logoHeight = 50;
     // Data path
     private $data;
     // Bank tranfer by card id
@@ -97,6 +101,27 @@ class Generator
         return $this;
     }
 
+    /**
+     * Set the value of logoWidth
+     */
+    public function setLogoWidth($logoWidth): self
+    {
+        $this->logoWidth = $logoWidth;
+
+        return $this;
+    }
+
+
+    /**
+     * Set the value of logoHeight
+     */
+    public function setLogoHeight($logoHeight): self
+    {
+        $this->logoHeight = $logoHeight;
+
+        return $this;
+    }
+
     public function generate(): string
     {
         if (empty($this->bankId) || empty($this->accountNo)) {
@@ -157,7 +182,9 @@ class Generator
             ->labelFont(new NotoSans(2))
             ->labelAlignment(new LabelAlignmentCenter());
         if (!empty($this->logoPath)) {
-            $result = $result->logoPath($this->logoPath);
+            $result = $result->logoPath($this->logoPath)
+                ->logoResizeToHeight($this->logoHeight)
+                ->logoResizeToWidth($this->logoWidth);
         }
         $result = $result->build();
         return $result->getDataUri();
