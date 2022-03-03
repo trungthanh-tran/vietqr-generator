@@ -156,6 +156,7 @@ class Generator
                 $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::ADDITION, $ref);
             }
             $crc = CRCHelper::crcChecksum($stringToGenerate . VietQRField::CRC . "04");
+            $crc = str_pad($crc, 4, "0", STR_PAD_LEFT);
             $this->data = Helper::addField($stringToGenerate, VietQRField::CRC, $crc);
         } catch (InvalidBankIdException $e) {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid bankId", ""));
