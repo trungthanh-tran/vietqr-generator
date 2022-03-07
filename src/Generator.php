@@ -7,6 +7,7 @@ use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
 use Endroid\QrCode\Label\Alignment\LabelAlignmentCenter;
 use Endroid\QrCode\Label\Font\NotoSans;
+use Endroid\QrCode\Label\LabelInterface;
 use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
 use Endroid\QrCode\Writer\PngWriter;
 
@@ -22,8 +23,8 @@ class Generator
     private $info;
     // Return text or image in base64
     private $returnText = true;
-    // Size of QR. Default 200px
-    private $size = 200;
+    // Size of QR. Default 300px
+    private $size = 300;
     // Size of margin. Default 10 px.
     private $margin = 10;
     // Logo path
@@ -36,6 +37,8 @@ class Generator
     private $data;
     // Bank tranfer by card id
     private $isCard = false;
+    // Labels
+    private $labels;
 
     public static function create(): Generator
     {
@@ -122,6 +125,17 @@ class Generator
         return $this;
     }
 
+    /**
+     * Set the value of labels
+     */
+    public function addLabel(LabelInterface $label): self
+    {
+        $this->labels[] = $label;
+
+        return $this;
+    }
+
+
     public function generate(): string
     {
         if (empty($this->bankId) || empty($this->accountNo)) {
@@ -178,10 +192,12 @@ class Generator
             ->errorCorrectionLevel(new ErrorCorrectionLevelHigh())
             ->size($this->size)
             ->margin($this->margin)
-            ->roundBlockSizeMode(new RoundBlockSizeModeMargin())
-            ->labelText($this->accountNo)
-            ->labelFont(new NotoSans(2))
-            ->labelAlignment(new LabelAlignmentCenter());
+            ->roundBlockSizeMode(new RoundBlockSizeModeMargin());
+
+        foreach (($this->labels ?? []) as $label) {
+            $result->addLabel($label->getText(), $label->getFont(), $label->getAlignment(), $label->getMargin(), $label->getTextColor());
+        }
+
         if (!empty($this->logoPath)) {
             $result = $result->logoPath($this->logoPath)
                 ->logoResizeToHeight($this->logoHeight)
@@ -195,7 +211,8 @@ class Generator
      * Get bank list
      * @return string
      */
-    public static function getBanksList(): string {
+    public static function getBanksList(): string
+    {
         $data = Helper::loadDataBanks();
         return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", Helper::loadDataBanks()));
     }
