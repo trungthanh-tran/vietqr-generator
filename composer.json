@@ -22,7 +22,7 @@
     "require": {
         "ext-json": "*",
         "php": ">=7.0",
-        "endroid/qr-code": "4.3.5"
+        "vgplay/qr-code": "^1.0.0"
     },
     "require-dev": {
         "phpunit/phpunit": "*"
