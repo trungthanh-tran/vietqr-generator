@@ -1,29 +1,36 @@
 <?php
 
-
 namespace tttran\viet_qr_generator;
 
-
+/**
+ * JSON response envelope returned by the generator.
+ */
 class Response implements \JsonSerializable
 {
-    private $code;
-    private $desc;
-    private $data;
-
     const SUCCESSFUL_CODE = 200;
     const INVALID_PARAMETERS = 400;
     const SERVER_ERROR = 500;
 
-    public function __construct ($code, $desc, $data) {
+    /** Response code (see class constants). */
+    private $code;
+
+    /** Human-readable description. */
+    private $desc;
+
+    /** Payload: QR text, base64 image or bank list. */
+    private $data;
+
+    public function __construct($code, $desc, $data)
+    {
         $this->code = $code;
         $this->desc = $desc;
         $this->data = $data;
-        return $this;
     }
 
     /**
      * @inheritDoc
      */
+    #[\ReturnTypeWillChange]
     public function jsonSerialize()
     {
         return get_object_vars($this);

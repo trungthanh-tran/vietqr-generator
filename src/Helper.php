@@ -2,53 +2,65 @@
 
 namespace tttran\viet_qr_generator;
 
+/**
+ * Helper functions for building the VietQR payload.
+ */
 class Helper
 {
+    /** In-memory lookup: bank code/bin/short name (lowercase) => BIN. */
     private static $banks;
+
+    /** Cached content of conf/banks.json. */
     private static $json_banks;
+
+    /**
+     * Append an EMVCo TLV field (ID + 2-digit length + value) to the payload.
+     *
+     * @param string $currentString Payload built so far
+     * @param string $code Two-digit field ID
+     * @param string $value Field value
+     * @return string Payload with the new field appended
+     */
     public static function addField(string $currentString, string $code, string $value): string
     {
-        $newValue = $currentString;
-        if (empty($newValue)) {
-            $newValue = '';
-        }
-        $newValue = $newValue . $code . sprintf("%02d", strlen($value)) . $value;
-        return $newValue;
+        return $currentString . $code . sprintf("%02d", strlen($value)) . $value;
     }
 
-    public static function generateMerchantInfo(string $bankId, string $accountNo, bool $isAccount): string
+    /**
+     * Build the consumer account information field (field 38) content.
+     *
+     * @param string $bankId Bank code, BIN or short name
+     * @param string $accountNo Account number or card number
+     * @param bool $isCard True to transfer by card number, false by account number
+     * @return string Encoded merchant info
+     * @throws InvalidBankIdException When the bank cannot be resolved
+     */
+    public static function generateMerchantInfo(string $bankId, string $accountNo, bool $isCard): string
     {
-        $merchantInfo = '';
-        $receiverInfo = '';
-        $serviceCode = Helper::getNapasServiceCode($isAccount);
-        $binCode = '';
-        try {
-            $binCode = Helper::getBIN($bankId);
-        } catch (InvalidBankIdException $e) {
-            throw $e;
-        }
-        $receiverInfo = Helper::addField($receiverInfo, VietQRField::CONSUMER_INFO_CONSUMER_BIN, $binCode);
-        $receiverInfo = Helper::addField($receiverInfo, VietQRField::CONSUMER_INFO_CONSUMER_MERCHANT, $accountNo);
+        $binCode = self::getBIN($bankId);
 
-        $merchantInfo = Helper::addField($merchantInfo, VietQRField::CONSUMER_INFO_GUID, "A000000727");
-        $merchantInfo = Helper::addField($merchantInfo, VietQRField::CONSUMER_INFO_CONSUMER, $receiverInfo);
-        $merchantInfo = Helper::addField($merchantInfo, VietQRField::CONSUMER_INFO_SERVICE_CODE, $serviceCode);
+        $receiverInfo = self::addField('', VietQRField::CONSUMER_INFO_CONSUMER_BIN, $binCode);
+        $receiverInfo = self::addField($receiverInfo, VietQRField::CONSUMER_INFO_CONSUMER_MERCHANT, $accountNo);
+
+        $merchantInfo = self::addField('', VietQRField::CONSUMER_INFO_GUID, Constants::NAPAS_GUID);
+        $merchantInfo = self::addField($merchantInfo, VietQRField::CONSUMER_INFO_CONSUMER, $receiverInfo);
+        $merchantInfo = self::addField($merchantInfo, VietQRField::CONSUMER_INFO_SERVICE_CODE, self::getNapasServiceCode($isCard));
 
         return $merchantInfo;
     }
 
     /**
-     * Get bin code
-     * @param string $bankId/bin/shortname
-     * @return string
-     * @throws InvalidBankIdException
+     * Resolve a bank identifier (code, BIN or short name) to its BIN.
+     *
+     * @param string $bankId Bank code, BIN or short name
+     * @return string BIN code
+     * @throws InvalidBankIdException When the bank cannot be resolved
      */
     private static function getBIN(string $bankId): string
     {
         if (empty($bankId)) {
             throw new InvalidBankIdException();
         }
-        $bankId = strtolower($bankId);
         if (empty(self::$banks)) {
             $bankData = self::loadDataBanks();
             self::$banks = array();
@@ -58,33 +70,45 @@ class Helper
                 self::$banks[strtolower($item["short_name"])] = strtolower($item["bin"]);
             }
         }
-        if (isset(self::$banks[$bankId])) {
-            return self::$banks[$bankId];
-        } else {
+        $bankId = strtolower($bankId);
+        if (!isset(self::$banks[$bankId])) {
             throw new InvalidBankIdException();
         }
+        return self::$banks[$bankId];
     }
 
-    public static function isValidAmount(int $amount): bool
+    /**
+     * Check that the amount is a positive number with at most two decimals.
+     *
+     * @param int|float|string $amount
+     * @return bool
+     */
+    public static function isValidAmount($amount): bool
     {
-        $regExpPattern = '/^\d{1,}\.?\d{0,2}$/';
-        $currencyToTest = trim($amount);
-        return preg_match($regExpPattern, $currencyToTest);
+        return (bool) preg_match('/^\d{1,}\.?\d{0,2}$/', trim((string) $amount));
     }
 
+    /**
+     * Get the NAPAS 247 service code for the transfer type.
+     *
+     * @param bool $isCard True to transfer by card number, false by account number
+     * @return string
+     */
     public static function getNapasServiceCode(bool $isCard): string
     {
-        if ($isCard) {
-            return Constants::NAPAS_247_BY_CARD;
-        } else {
-            return Constants::NAPAS_247_BY_ACCOUNT;
-        }
+        return $isCard ? Constants::NAPAS_247_BY_CARD : Constants::NAPAS_247_BY_ACCOUNT;
     }
 
-    public static function loadDataBanks() {
+    /**
+     * Load and cache the bank list from conf/banks.json.
+     *
+     * @return array
+     */
+    public static function loadDataBanks()
+    {
         if (!isset(self::$json_banks)) {
             $banks = file_get_contents(__DIR__ . '/conf/banks.json');
-            self::$json_banks =  json_decode($banks,true);
+            self::$json_banks = json_decode($banks, true);
         }
         return self::$json_banks;
     }

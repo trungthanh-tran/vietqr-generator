@@ -5,49 +5,75 @@ namespace tttran\viet_qr_generator;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel\ErrorCorrectionLevelHigh;
-use Endroid\QrCode\Label\Alignment\LabelAlignmentCenter;
-use Endroid\QrCode\Label\Font\NotoSans;
 use Endroid\QrCode\Label\LabelInterface;
 use Endroid\QrCode\RoundBlockSizeMode\RoundBlockSizeModeMargin;
 use Endroid\QrCode\Writer\PngWriter;
 
+/**
+ * Fluent builder that generates VietQR (NAPAS 247) payloads following the
+ * VietQR specification, either as raw EMVCo text or as a base64 PNG image.
+ *
+ * Static vs dynamic QR:
+ * - Static QR (initiation method "11"): only bank and account are encoded.
+ *   The code can be printed once and reused; the payer fills in the amount
+ *   and message. Produced when neither amount() nor info() is set.
+ * - Dynamic QR (initiation method "12"): the code carries the amount and/or
+ *   the payment reference and is meant for a single transaction. Produced
+ *   automatically when amount() or info() is set.
+ */
 class Generator
 {
-    // Bank ID
+    /** Bank identifier: code, BIN or short name (see conf/banks.json). */
     private $bankId;
-    //  Account No
+
+    /** Beneficiary account number (or card number when isCard is true). */
     private $accountNo;
-    // Amount to transfer
+
+    /** Amount to transfer. Leave empty for a static QR. */
     private $amount;
-    // Ref
+
+    /** Payment reference / message. Leave empty for a static QR. */
     private $info;
-    // Return text or image in base64
+
+    /** Merchant category code (ISO 18245, 4 digits). Optional. */
+    private $merchantCategoryCode;
+
+    /** Merchant name (field 59). Optional. */
+    private $merchantName;
+
+    /** Merchant city (field 60). Optional. */
+    private $merchantCity;
+
+    /** When true, return the QR payload as text; otherwise a base64 PNG image. */
     private $returnText = true;
-    // Size of QR. Default 300px
+
+    /** QR image size in pixels. */
     private $size = 300;
-    // Size of margin. Default 10 px.
+
+    /** QR image margin in pixels. */
     private $margin = 10;
-    // Logo path
+
+    /** Path to a logo drawn at the center of the QR image. */
     private $logoPath;
-    // Logo width in px
+
+    /** Logo width in pixels. */
     private $logoWidth = 50;
-    // Logo height in px
+
+    /** Logo height in pixels. */
     private $logoHeight = 50;
-    // Data path
+
+    /** Generated payload text. */
     private $data;
-    // Bank tranfer by card id
+
+    /** True to transfer by card number, false by account number. */
     private $isCard = false;
-    // Labels
+
+    /** Labels rendered below the QR image. */
     private $labels;
 
     public static function create(): Generator
     {
         return new self();
-    }
-
-    public function __construct()
-    {
-        return $this;
     }
 
     public function bankId($bankId): Generator
@@ -71,6 +97,24 @@ class Generator
     public function info($info): Generator
     {
         $this->info = $info;
+        return $this;
+    }
+
+    public function merchantCategoryCode($merchantCategoryCode): Generator
+    {
+        $this->merchantCategoryCode = $merchantCategoryCode;
+        return $this;
+    }
+
+    public function merchantName($merchantName): Generator
+    {
+        $this->merchantName = $merchantName;
+        return $this;
+    }
+
+    public function merchantCity($merchantCity): Generator
+    {
+        $this->merchantCity = $merchantCity;
         return $this;
     }
 
@@ -104,87 +148,144 @@ class Generator
         return $this;
     }
 
-    /**
-     * Set the value of logoWidth
-     */
     public function setLogoWidth($logoWidth): self
     {
         $this->logoWidth = $logoWidth;
-
         return $this;
     }
 
-
-    /**
-     * Set the value of logoHeight
-     */
     public function setLogoHeight($logoHeight): self
     {
         $this->logoHeight = $logoHeight;
-
         return $this;
     }
 
     /**
-     * Set the value of labels
+     * Add a label rendered below the QR image.
      */
     public function addLabel(LabelInterface $label): self
     {
         $this->labels[] = $label;
-
         return $this;
     }
 
-
+    /**
+     * Generate the VietQR payload.
+     *
+     * @return string JSON-encoded Response whose data is the payload text
+     *                (returnText = true) or a base64 PNG data URI.
+     */
     public function generate(): string
     {
-        if (empty($this->bankId) || empty($this->accountNo)) {
-            return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid parameter", ""));
+        $validationError = $this->validate();
+        if ($validationError !== null) {
+            return json_encode(new Response(Response::INVALID_PARAMETERS, $validationError, ""));
         }
 
         try {
-            $stringToGenerate = "";
-            $paymentType = "11";
-            $consumerInfo = Helper::generateMerchantInfo($this->bankId, $this->accountNo, $this->isCard);
-            // Add header
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::VERSION, "01");
-            if (!empty($this->info)) {
-                $paymentType = "12";
-            }
-            // Payment type. 11 if permantly. 12 otherwise
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::INITIATION_METHOD, $paymentType);
-            // Add consumer info
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CONSUMER_INFO, $consumerInfo);
-            // Add currency
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::CURRENCY_CODE, "704");
-            if (!empty($this->amount)) {
-                if (!Helper::isValidAmount($this->amount)) {
-                    json_encode(new Response(Response::INVALID_PARAMETERS, "Invalid amount", ""));
-                }
-                // Add amount
-                $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::TRANSACTION_AMOUNT, $this->amount);
-            }
-            $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::COUNTRY_CODE, "VN");
-            if (!empty($this->info)) {
-                $ref = Helper::addField("", VietQRField::ADDITION_REF, $this->info);
-                $stringToGenerate = Helper::addField($stringToGenerate, VietQRField::ADDITION, $ref);
-            }
-            $crc = CRCHelper::crcChecksum($stringToGenerate . VietQRField::CRC . "04");
-            $crc = str_pad($crc, 4, "0", STR_PAD_LEFT);
-            $this->data = Helper::addField($stringToGenerate, VietQRField::CRC, $crc);
+            $this->data = $this->buildPayload();
         } catch (InvalidBankIdException $e) {
             return json_encode(new Response(Response::INVALID_PARAMETERS, "Missing or invalid bankId", ""));
         }
-        if ($this->returnText) {
-            return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $this->data));
-        } else {
-            return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $this->generate_image()));
-        }
+
+        $data = $this->returnText ? $this->data : $this->generateImage();
+        return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", $data));
     }
 
-    public function generate_image(): string
+    /**
+     * Validate the configured inputs against the VietQR specification limits.
+     *
+     * @return string|null Error message, or null when everything is valid
+     */
+    private function validate()
     {
-        $result = Builder::create()
+        if (empty($this->bankId) || empty($this->accountNo)) {
+            return "Missing or invalid parameter";
+        }
+        if (strlen($this->accountNo) > Constants::MAX_LENGTH_ACCOUNT_NO) {
+            return "Account number exceeds " . Constants::MAX_LENGTH_ACCOUNT_NO . " characters";
+        }
+        if (!empty($this->amount)) {
+            if (!Helper::isValidAmount($this->amount)) {
+                return "Invalid amount";
+            }
+            if (strlen((string) $this->amount) > Constants::MAX_LENGTH_AMOUNT) {
+                return "Amount exceeds " . Constants::MAX_LENGTH_AMOUNT . " characters";
+            }
+        }
+        if (!empty($this->info) && strlen($this->info) > Constants::MAX_LENGTH_PURPOSE) {
+            return "Purpose of transaction exceeds " . Constants::MAX_LENGTH_PURPOSE . " characters";
+        }
+        if (!empty($this->merchantCategoryCode) && !preg_match('/^\d{4}$/', (string) $this->merchantCategoryCode)) {
+            return "Merchant category code must be exactly " . Constants::LENGTH_MCC . " digits";
+        }
+        if (!empty($this->merchantName) && strlen($this->merchantName) > Constants::MAX_LENGTH_MERCHANT_NAME) {
+            return "Merchant name exceeds " . Constants::MAX_LENGTH_MERCHANT_NAME . " characters";
+        }
+        if (!empty($this->merchantCity) && strlen($this->merchantCity) > Constants::MAX_LENGTH_MERCHANT_CITY) {
+            return "Merchant city exceeds " . Constants::MAX_LENGTH_MERCHANT_CITY . " characters";
+        }
+        return null;
+    }
+
+    /**
+     * Build the EMVCo payload text, including the trailing CRC field.
+     *
+     * @return string
+     * @throws InvalidBankIdException
+     */
+    private function buildPayload(): string
+    {
+        $payload = Helper::addField('', VietQRField::VERSION, Constants::PAYLOAD_FORMAT_VERSION);
+        $payload = Helper::addField($payload, VietQRField::INITIATION_METHOD, $this->getInitiationMethod());
+        $payload = Helper::addField($payload, VietQRField::CONSUMER_INFO, Helper::generateMerchantInfo($this->bankId, $this->accountNo, $this->isCard));
+        if (!empty($this->merchantCategoryCode)) {
+            $payload = Helper::addField($payload, VietQRField::MERCHANT_CATEGORY_CODE, $this->merchantCategoryCode);
+        }
+        $payload = Helper::addField($payload, VietQRField::CURRENCY_CODE, Constants::CURRENCY_VND);
+        if (!empty($this->amount)) {
+            $payload = Helper::addField($payload, VietQRField::TRANSACTION_AMOUNT, $this->amount);
+        }
+        $payload = Helper::addField($payload, VietQRField::COUNTRY_CODE, Constants::COUNTRY_VN);
+        if (!empty($this->merchantName)) {
+            $payload = Helper::addField($payload, VietQRField::MERCHANT_NAME, $this->merchantName);
+        }
+        if (!empty($this->merchantCity)) {
+            $payload = Helper::addField($payload, VietQRField::MERCHANT_CITY, $this->merchantCity);
+        }
+        if (!empty($this->info)) {
+            $additionalData = Helper::addField('', VietQRField::ADDITION_REF, $this->info);
+            $payload = Helper::addField($payload, VietQRField::ADDITION, $additionalData);
+        }
+
+        // The CRC covers the whole payload including its own field ID and length.
+        $crc = CRCHelper::crcChecksum($payload . VietQRField::CRC . "04");
+        $crc = str_pad($crc, 4, "0", STR_PAD_LEFT);
+        return Helper::addField($payload, VietQRField::CRC, $crc);
+    }
+
+    /**
+     * Resolve the point of initiation method: dynamic when the QR carries
+     * an amount or a payment reference, static otherwise.
+     *
+     * @return string
+     */
+    private function getInitiationMethod(): string
+    {
+        if (!empty($this->amount) || !empty($this->info)) {
+            return Constants::INITIATION_METHOD_DYNAMIC;
+        }
+        return Constants::INITIATION_METHOD_STATIC;
+    }
+
+    /**
+     * Render the generated payload as a PNG image.
+     *
+     * @return string Base64 data URI
+     */
+    public function generateImage(): string
+    {
+        $builder = Builder::create()
             ->writer(new PngWriter())
             ->writerOptions([])
             ->data($this->data)
@@ -195,25 +296,33 @@ class Generator
             ->roundBlockSizeMode(new RoundBlockSizeModeMargin());
 
         foreach (($this->labels ?? []) as $label) {
-            $result->addLabel($label->getText(), $label->getFont(), $label->getAlignment(), $label->getMargin(), $label->getTextColor());
+            $builder->addLabel($label->getText(), $label->getFont(), $label->getAlignment(), $label->getMargin(), $label->getTextColor());
         }
 
         if (!empty($this->logoPath)) {
-            $result = $result->logoPath($this->logoPath)
+            $builder = $builder->logoPath($this->logoPath)
                 ->logoResizeToHeight($this->logoHeight)
                 ->logoResizeToWidth($this->logoWidth);
         }
-        $result = $result->build();
-        return $result->getDataUri();
+
+        return $builder->build()->getDataUri();
     }
 
     /**
-     * Get bank list
-     * @return string
+     * @deprecated Use generateImage() instead.
+     */
+    public function generate_image(): string
+    {
+        return $this->generateImage();
+    }
+
+    /**
+     * Get the supported bank list.
+     *
+     * @return string JSON-encoded Response
      */
     public static function getBanksList(): string
     {
-        $data = Helper::loadDataBanks();
         return json_encode(new Response(Response::SUCCESSFUL_CODE, "ok", Helper::loadDataBanks()));
     }
 }
