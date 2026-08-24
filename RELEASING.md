@@ -31,7 +31,12 @@ This project follows the Maven release flow (`release:prepare` /
 
 ## Versioning
 
-- `vX.Y` tags, following the existing scheme (v0.1 ... v0.8).
+- `vX.Y` tags, following the existing scheme (v0.1 ... v0.8); `vX.Y.Z`
+  (semver) is also accepted.
 - Bump `Y` for features and fixes; bump `X` for breaking API changes.
 - Between releases, `Version::VERSION` stays at the next planned version
-  with a `-SNAPSHOT` suffix (Maven convention).
+  with a `-SNAPSHOT` suffix. As in Maven, `prepare` computes the next
+  development version by bumping the least significant segment
+  (0.9 -> 0.10-SNAPSHOT, 1.2.3 -> 1.2.4-SNAPSHOT); pass a second argument
+  to choose a different milestone, e.g.
+  `./scripts/release.sh prepare 0.9 1.0-SNAPSHOT`.

@@ -29,10 +29,10 @@ set_version() {
 }
 
 next_dev_version() {
-    # 0.9 -> 0.10-SNAPSHOT, 1.2 -> 1.3-SNAPSHOT
-    local major minor
-    IFS=. read -r major minor <<< "$1"
-    echo "${major}.$((minor + 1))-SNAPSHOT"
+    # Maven default: bump the least significant segment.
+    # 0.9 -> 0.10-SNAPSHOT, 1.2.3 -> 1.2.4-SNAPSHOT
+    local prefix="${1%.*}" last="${1##*.}"
+    echo "${prefix}.$((last + 1))-SNAPSHOT"
 }
 
 prepare() {
@@ -40,8 +40,8 @@ prepare() {
     local next="${2:-$(next_dev_version "$version")}"
     local tag="v${version}"
 
-    if ! [[ "$version" =~ ^[0-9]+\.[0-9]+$ ]]; then
-        echo "ERROR: version must look like X.Y (e.g. 0.9), got '${version}'." >&2
+    if ! [[ "$version" =~ ^[0-9]+(\.[0-9]+)+$ ]]; then
+        echo "ERROR: version must look like X.Y or X.Y.Z (e.g. 0.9), got '${version}'." >&2
         exit 1
     fi
     if [ -n "$(git status --porcelain)" ]; then
