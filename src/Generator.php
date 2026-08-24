@@ -76,6 +76,14 @@ class Generator
         return new self();
     }
 
+    /**
+     * Get the library version.
+     */
+    public static function version(): string
+    {
+        return Version::VERSION;
+    }
+
     public function bankId($bankId): Generator
     {
         $this->bankId = $bankId;

@@ -1,35 +1,37 @@
 # Release process
 
-This project follows a Maven-like release flow (`release:prepare` /
-`release:perform`), adapted to Composer: Packagist derives package versions
-from annotated git tags, so a release is a changelog entry plus a tag —
-`composer.json` must NOT contain a `version` field.
+This project follows the Maven release flow (`release:prepare` /
+`release:perform`), adapted to Composer:
+
+- The library version lives in [src/Version.php](src/Version.php) (the
+  `pom.xml` equivalent) and carries a `-SNAPSHOT` suffix during development.
+- Packagist derives package versions from annotated git tags, so
+  `composer.json` must NOT contain a `version` field.
 
 ## Steps
 
-1. **Prepare** — make sure the working tree is clean and tests pass:
-   ```bash
-   composer install
-   vendor/bin/phpunit tests
-   ```
-2. **Update the changelog** — add a `## vX.Y - YYYY-MM-DD` section on top of
+1. **Update the changelog** — add a `## vX.Y - YYYY-MM-DD` section on top of
    [CHANGELOG.md](CHANGELOG.md) describing the release, and commit it.
-3. **Tag and push** — run the release script, which verifies the tree is
-   clean, the changelog contains the version, then creates an annotated tag
-   and pushes it:
+2. **Prepare** — verifies the tree is clean, tests pass and the changelog
+   documents the version; then sets `Version::VERSION` to the release
+   version, commits and tags `vX.Y`, and bumps to the next `-SNAPSHOT`:
    ```bash
-   ./scripts/release.sh 0.8
+   ./scripts/release.sh prepare 0.9            # next dev version: 0.10-SNAPSHOT
+   ./scripts/release.sh prepare 0.9 1.0-SNAPSHOT  # or choose it explicitly
    ```
-   Or manually:
+3. **Perform** — pushes the branch and the release tag; Packagist picks the
+   tag up automatically (or via the "Update" button on the package page):
    ```bash
-   git tag -a v0.8 -m "Release v0.8"
-   git push origin main v0.8
+   ./scripts/release.sh perform
    ```
-4. **Perform** — Packagist picks the new tag up automatically (or via the
-   "Update" button on the package page). Verify the new version appears at
+   Verify the new version appears at
    https://packagist.org/packages/tttran/viet_qr_generator.
+
+`./scripts/release.sh 0.9` is a shorthand that runs prepare then perform.
 
 ## Versioning
 
 - `vX.Y` tags, following the existing scheme (v0.1 ... v0.8).
 - Bump `Y` for features and fixes; bump `X` for breaking API changes.
+- Between releases, `Version::VERSION` stays at the next planned version
+  with a `-SNAPSHOT` suffix (Maven convention).
